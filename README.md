@@ -6,7 +6,11 @@ A shop-floor tool that tells a welder whether a rectangular frame is square, usi
 
 ## Problem
 
-Checking a welded frame for square usually means a large framing square or an angle gauge, and the result is a judgment call. Cross-corner (diagonal) measuring is faster and more sensitive, but the operator needs to know what diagonal to expect and how much variation the angle tolerance allows. Doing that trigonometry at the bench does not happen.
+Our welded frames carry a ±0.5° corner spec, but the welders had no practical way to check it. I realized we were expecting the team to hold a spec without giving them the tools to assess it. Cross-corner (diagonal) measuring can do it with a tape measure, but only if the operator knows what diagonal to expect and how much variation ±0.5° allows. Nobody does that trigonometry at the bench.
+
+## Result
+
+This tool was the answer. It is now on every computer in the metal shop.
 
 ## What it does
 
