@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Weldment Squareness Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#eef1f3;--panel:#fff;--ink:#1a2127;--muted:#56636d;--line:#c9d1d8;--soft:#e2edf5;
+  --accent:#1f3864;--acc2:#2f6fb0;
+  --pass:#2E8B4A;--pass-bg:#E2F3E6;--fail:#C62828;--fail-bg:#FBE4E4;
+  --f-d:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;--f-b:"Source Sans 3","Segoe UI",Arial,sans-serif;--f-m:"IBM Plex Mono",Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-b)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{background:var(--accent);color:#fff}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding-block:14px}
+.top .tag{font:600 .75rem var(--f-m);letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.lang{display:flex;border:1px solid #fff;border-radius:4px;overflow:hidden}
+.lang button{font:700 13px var(--f-b);letter-spacing:.1em;padding:5px 12px;border:0;background:transparent;color:#fff;cursor:pointer}
+.lang button[aria-pressed="true"]{background:#fff;color:var(--accent)}
+.home{font:600 13px var(--f-b);color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.6);border-radius:999px;padding:5px 12px}
+.right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+main.wrap{padding-block:26px 36px;display:grid;gap:24px}
+h1{font:700 2.6rem/1.05 var(--f-d);margin:0;color:var(--accent);text-wrap:balance}
+.lede{margin:8px 0 0;max-width:72ch}
+.note{margin:10px 0 0;font-size:.9rem;color:var(--muted);max-width:80ch}
+
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}h1{font-size:2rem}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px;min-width:0}
+.eyebrow{font:700 .95rem var(--f-d);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+
+form{display:grid;gap:14px}
+label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.hint{font-weight:400;color:var(--muted);font-size:13px}
+.field{min-width:0;display:flex;align-items:stretch;border:1px solid var(--line);border-radius:4px;background:#fff;overflow:hidden}
+.field:focus-within{outline:2px solid var(--acc2);outline-offset:1px}
+.field input{flex:1 1 0;width:0;min-width:0;border:0;background:transparent;color:var(--ink);font:600 19px var(--f-b);font-variant-numeric:tabular-nums;padding:9px 10px;outline:none}
+.field .done{display:none;border:0;border-left:1px solid var(--line);background:var(--accent);color:#fff;font:700 14px var(--f-b);padding:0 14px;cursor:pointer}
+.field:focus-within .done{display:block}
+.field input::placeholder{color:#8a96a0;font-weight:400;font-size:15px}
+.field:has(input:disabled){background:var(--bg);border-style:dashed}
+.field .u{display:flex;align-items:center;padding:0 12px;color:var(--muted);font-size:14px;background:var(--bg);border-left:1px solid var(--line)}
+.units{display:flex;border:1px solid var(--accent);border-radius:4px;overflow:hidden;width:max-content}
+.units button{font:600 14px var(--f-b);padding:7px 16px;border:0;background:#fff;color:var(--accent);cursor:pointer}
+.units button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.sep{border:0;border-top:1px dashed var(--line);margin:4px 0}
+.err{color:var(--fail);font-size:14px;margin:0}
+
+.readouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:6px;overflow:hidden}
+@media (max-width:560px){.readouts{grid-template-columns:minmax(0,1fr)}}
+.ro{padding:14px 16px;border-left:1px solid var(--line);min-width:0}
+.ro:first-child{border-left:0}
+@media (max-width:560px){.ro{border-left:0;border-top:1px solid var(--line)}.ro:first-child{border-top:0}}
+.ro .k{font:600 .78rem var(--f-m);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ro .v{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-weight:700;font-size:30px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ro .fr{font-size:19px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ro .fr:empty{display:none}
+.ro .s{font-size:13px;color:var(--muted)}
+.ro.nom{background:var(--accent)}
+.ro.nom .k,.ro.nom .s,.ro.nom .fr{color:#c9d6ea}
+.ro.nom .v{color:#fff}
+.diff{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.diff b{color:var(--ink)}
+
+.verdict{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 16px;background:var(--bg);border-left:6px solid #8a96a0;border-radius:4px}
+.pill{font:700 1.05rem var(--f-d);letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:3px;background:#8a96a0;color:#fff}
+.verdict.ok{background:var(--pass-bg);border-left-color:var(--pass)}.verdict.ok .pill{background:var(--pass)}
+.verdict.bad{background:var(--fail-bg);border-left-color:var(--fail)}.verdict.bad .pill{background:var(--fail)}
+.verdict p{margin:0;flex:1 1 260px;min-width:0}
+
+.scale-wrap{overflow-x:auto}
+.scale-wrap svg{display:block;width:100%;min-width:640px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;vertical-align:middle;margin-right:6px}
+
+.learn{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:820px){.learn{grid-template-columns:minmax(0,1fr)}}
+.learn h3{font:700 1.15rem var(--f-d);color:var(--accent);margin:0 0 6px}
+.learn p{margin:0 0 10px}
+.figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.figs figure{margin:0;border:1px solid var(--line);border-radius:6px;padding:10px;background:#fafbfc;min-width:0}
+.figs svg{display:block;width:100%;height:auto}
+.figs figcaption{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.steps{margin:0;padding-left:22px;display:grid;gap:6px}
+.steps strong{color:var(--ink)}
+.tips{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.callout{background:var(--soft);border-left:4px solid var(--acc2);padding:10px 14px;border-radius:4px;font-size:15px;margin-top:12px}
+
+.foot{border-top:1px solid var(--line);background:var(--panel)}
+.foot .wrap{padding-block:18px;font-size:13px;color:var(--muted);display:grid;gap:4px}
+.foot a{color:var(--accent)}
+</style></head><body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="tag" data-i18n="dept">Quality inspection tool | Portfolio version</span>
+    <div class="right">
+      <a class="home" href="https://woyakn77-create.github.io/Portfolio/">Portfolio</a>
+      <div class="lang" role="group" aria-label="Language / Idioma">
+        <button type="button" id="l-en" lang="en" aria-pressed="true">EN</button>
+        <button type="button" id="l-es" lang="es" aria-pressed="false">ES</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div>
+    <h1 data-i18n="title">Weldment Squareness Check</h1>
+    <p class="lede" data-i18n="lede">Enter the frame length, width, and allowed corner angle. The tool gives the nominal cross-corner (diagonal) dimension and the min and max diagonal that keep each corner within tolerance of 90&deg;.</p>
+    <p class="note" data-i18n="why">Built for welders on the shop floor: a tape measure is the only gauge needed, fractions are accepted as typed, and the page switches between English and Spanish.</p>
+  </div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="in-h">
+      <h2 class="eyebrow" id="in-h" data-i18n="inputs">Inputs</h2>
+      <form id="f" novalidate>
+        <div>
+          <div class="hint" style="margin-bottom:4px" data-i18n="units">Units</div>
+          <div class="units" role="group" aria-label="Units">
+            <button type="button" id="u-in" aria-pressed="true" data-i18n="inches">Inches</button>
+            <button type="button" id="u-mm" aria-pressed="false" data-i18n="mm">Millimeters</button>
+          </div>
+        </div>
+        <label for="len"><span data-i18n="len">Length (L)</span>
+          <span class="field"><input id="len" inputmode="decimal" value="30"><span class="u ul">in</span></span>
+          <span class="hint" id="fmt-hint" data-i18n="fmtHint">Decimal or fraction: 48.5, 48 1/2, or 48-1/2</span>
+        </label>
+        <label for="wid"><span data-i18n="wid">Width (W)</span>
+          <span class="field"><input id="wid" inputmode="decimal" value="40"><span class="u ul">in</span></span>
+        </label>
+        <label for="tol"><span data-i18n="tol">Angle tolerance (&plusmn;)</span>
+          <span class="field"><input id="tol" inputmode="decimal" value="0.5"><span class="u" data-i18n="deg">deg</span></span>
+          <span class="hint" data-i18n="tolHint">Example default &plusmn;0.5&deg;. Use the tolerance on your drawing.</span>
+        </label>
+        <hr class="sep">
+        <label for="meas"><span data-i18n="meas">Measured diagonal</span> <span class="hint" data-i18n="optional">(optional)</span>
+          <span class="field"><input id="meas" inputmode="decimal" value="" placeholder="Enter length and width first" disabled><span class="u ul">in</span></span>
+          <span class="hint" data-i18n="measHint">Measure corner to corner. Check both diagonals and enter each one. The check runs when you tap Done or click off the box.</span>
+        </label>
+        <p class="err" id="err" hidden></p>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="out-h">
+      <h2 class="eyebrow" id="out-h" data-i18n="cross">Cross-corner dimension</h2>
+      <div class="readouts">
+        <div class="ro"><div class="k" data-i18n="min">Min</div><div class="v"><span id="o-min">-</span><span class="fr" id="o-min-f"></span></div><div class="s" id="o-min-s"></div></div>
+        <div class="ro nom"><div class="k" data-i18n="nom">Nominal</div><div class="v"><span id="o-nom">-</span><span class="fr" id="o-nom-f"></span></div><div class="s" data-i18n="corner90">Corner at 90.00&deg;</div></div>
+        <div class="ro"><div class="k" data-i18n="max">Max</div><div class="v"><span id="o-max">-</span><span class="fr" id="o-max-f"></span></div><div class="s" id="o-max-s"></div></div>
+      </div>
+      <p class="diff" id="diff"></p>
+      <div class="verdict" id="verdict"><span class="pill" id="pill">No reading</span><p id="vtext">Enter a measured diagonal to see how far the corner is from square.</p></div>
+
+      <h2 class="eyebrow" style="margin-top:26px" data-i18n="scaleH">Scale: degrees off square vs. diagonal</h2>
+      <div class="scale-wrap"><svg id="scale" viewBox="0 0 1000 262" role="img" data-i18n-aria="scaleAria" aria-label="Scale showing degrees off square above matching diagonal dimensions"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--pass)"></i><span data-i18n="lgIn">Within tolerance</span></span>
+        <span><i style="background:var(--fail)"></i><span data-i18n="lgOut">Out of tolerance</span></span>
+        <span><i style="background:var(--ink)"></i><span data-i18n="lgMeas">Measured diagonal</span></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="how-h">
+    <h2 class="eyebrow" id="how-h" data-i18n="how">How cross-corner measuring works</h2>
+    <div class="learn">
+      <div>
+        <h3 data-i18n="pH">The principle</h3>
+        <p data-i18n="p1">A rectangle has two equal diagonals. When a frame is out of square it leans into a parallelogram: one diagonal gets longer and the other gets shorter by about the same amount. Comparing the two diagonals finds the error without a square, protractor, or angle gauge.</p>
+        <p data-i18n="p2">The longer diagonal runs between the two corners that opened past 90&deg;. The shorter one runs between the corners that closed under 90&deg;.</p>
+        <div class="figs">
+          <figure>
+            <svg viewBox="0 0 200 172" role="img" aria-label="Square frame with equal diagonals">
+              <rect x="30" y="25" width="140" height="100" fill="none" stroke="#1f3864" stroke-width="6"/>
+              <line x1="30" y1="25" x2="170" y2="125" stroke="#2E8B4A" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <line x1="170" y1="25" x2="30" y2="125" stroke="#2E8B4A" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <g font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600" fill="#1a2127">
+                <text x="16" y="20">1</text><text x="176" y="20">2</text><text x="176" y="142">3</text><text x="16" y="142">4</text>
+              </g>
+              <text x="100" y="165" text-anchor="middle" font-family="Source Sans 3,Arial" font-size="13" font-weight="700" fill="#2E8B4A">A = B</text>
+            </svg>
+            <figcaption data-i18n="f1">Square: diagonals match</figcaption>
+          </figure>
+          <figure>
+            <svg viewBox="0 0 200 172" role="img" aria-label="Racked frame with one long and one short diagonal">
+              <polygon points="45,25 185,25 155,125 15,125" fill="none" stroke="#1f3864" stroke-width="6"/>
+              <line x1="45" y1="25" x2="155" y2="125" stroke="#C62828" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <line x1="185" y1="25" x2="15" y2="125" stroke="#2f6fb0" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <g font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600" fill="#1a2127">
+                <text x="34" y="20">1</text><text x="186" y="20">2</text><text x="160" y="142">3</text><text x="2" y="142">4</text>
+              </g>
+              <text x="96" y="165" text-anchor="end" font-family="Source Sans 3,Arial" font-size="12" font-weight="700" fill="#C62828" data-i18n="short">A short</text>
+              <text x="106" y="165" font-family="Source Sans 3,Arial" font-size="12" font-weight="700" fill="#2f6fb0" data-i18n="long">B long</text>
+            </svg>
+            <figcaption data-i18n="f2">Racked: one long, one short</figcaption>
+          </figure>
+        </div>
+        <div class="callout" data-i18n="c1"><strong>Check the sides first.</strong> Equal diagonals prove square only when opposite sides are equal. A frame with one short side can have matching diagonals and still be out of square, so confirm both lengths and both widths before trusting the diagonals.</div>
+      </div>
+      <div>
+        <h3 data-i18n="sH">How to measure</h3>
+        <ol class="steps">
+          <li data-i18n="s1">Lay the frame on a flat table or fixture. Diagonals do not catch twist, so the part needs to sit flat first.</li>
+          <li data-i18n="s2">Check that the two lengths match and the two widths match.</li>
+          <li data-i18n="s3">Pick the same reference point at all four corners: outside corners, or a center punch mark set the same distance in from each corner.</li>
+          <li data-i18n="s4">Hook the tape on corner 1 and read at corner 3. This is diagonal A.</li>
+          <li data-i18n="s5">Hook the tape on corner 2 and read at corner 4. This is diagonal B.</li>
+          <li data-i18n="s6">Enter each diagonal in the Measured field. <strong>Both readings in the green band:</strong> the frame is square within tolerance.</li>
+          <li data-i18n="s7"><strong>Either reading in the red zone:</strong> hold the part and flag it for quality review before any rework.</li>
+        </ol>
+        <h3 style="margin-top:16px" data-i18n="tH">Shop tips</h3>
+        <ul class="tips">
+          <li data-i18n="t1">Tack, measure, then weld. Correcting a tacked frame takes a clamp; correcting a finished weldment takes heat or a cut.</li>
+          <li data-i18n="t2">To correct, pull or clamp across the <strong>long</strong> diagonal. That shortens it and lengthens the other one.</li>
+          <li data-i18n="t3">Weld shrinkage pulls toward the weld. Alternate welds across opposite corners and re-check the diagonals between passes.</li>
+          <li data-i18n="t4">Use one tape for both readings and pull it with the same tension each time.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span data-i18n="footP">Portfolio version: generic labels, no company branding. Example tolerance only; always use the drawing.</span>
+    <span><span data-i18n="footM">Diagonal model:</span> d&sup2; = L&sup2; + W&sup2; &plusmn; 2LW&middot;sin(&delta;), where &delta; is the corner error from 90&deg;.</span>
+    <span>Built with Claude. <a href="https://github.com/woyakn77-CREATE/weld-squareness-check">Code on GitHub</a></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var unit = 'in', lang = 'en';
+  var STR = {
+    en: {
+      dept: 'Quality inspection tool | Portfolio version',
+      title: 'Weldment Squareness Check',
+      lede: 'Enter the frame length, width, and allowed corner angle. The tool gives the nominal cross-corner (diagonal) dimension and the min and max diagonal that keep each corner within tolerance of 90&deg;.',
+      why: 'Built for welders on the shop floor: a tape measure is the only gauge needed, fractions are accepted as typed, and the page switches between English and Spanish.',
+      inputs: 'Inputs', units: 'Units', inches: 'Inches', mm: 'Millimeters',
+      len: 'Length (L)', wid: 'Width (W)', tol: 'Angle tolerance (&plusmn;)', deg: 'deg',
+      fmtHint: 'Decimal or fraction: 48.5, 48 1/2, or 48-1/2',
+      tolHint: 'Example default &plusmn;0.5&deg;. Use the tolerance on your drawing.',
+      meas: 'Measured diagonal', optional: '(optional)',
+      measHint: 'Measure corner to corner. Check both diagonals and enter each one. The check runs when you tap Done or click off the box.',
+      cross: 'Cross-corner dimension', min: 'Min', nom: 'Nominal', max: 'Max', corner90: 'Corner at 90.00&deg;',
+      scaleH: 'Scale: degrees off square vs. diagonal', scaleAria: 'Scale showing degrees off square above matching diagonal dimensions',
+      lgIn: 'Within tolerance', lgOut: 'Out of tolerance', lgMeas: 'Measured diagonal',
+      how: 'How cross-corner measuring works',
+      pH: 'The principle',
+      p1: 'A rectangle has two equal diagonals. When a frame is out of square it leans into a parallelogram: one diagonal gets longer and the other gets shorter by about the same amount. Comparing the two diagonals finds the error without a square, protractor, or angle gauge.',
+      p2: 'The longer diagonal runs between the two corners that opened past 90&deg;. The shorter one runs between the corners that closed under 90&deg;.',
+      f1: 'Square: diagonals match', f2: 'Racked: one long, one short', short: 'A short', long: 'B long',
+      c1: '<strong>Check the sides first.</strong> Equal diagonals prove square only when opposite sides are equal. A frame with one short side can have matching diagonals and still be out of square, so confirm both lengths and both widths before trusting the diagonals.',
+      sH: 'How to measure',
+      s1: 'Lay the frame on a flat table or fixture. Diagonals do not catch twist, so the part needs to sit flat first.',
+      s2: 'Check that the two lengths match and the two widths match.',
+      s3: 'Pick the same reference point at all four corners: outside corners, or a center punch mark set the same distance in from each corner.',
+      s4: 'Hook the tape on corner 1 and read at corner 3. This is diagonal A.',
+      s5: 'Hook the tape on corner 2 and read at corner 4. This is diagonal B.',
+      s6: 'Enter each diagonal in the Measured field. <strong>Both readings in the green band:</strong> the frame is square within tolerance.',
+      s7: '<strong>Either reading in the red zone:</strong> hold the part and flag it for quality review before any rework.',
+      tH: 'Shop tips',
+      t1: 'Tack, measure, then weld. Correcting a tacked frame takes a clamp; correcting a finished weldment takes heat or a cut.',
+      t2: 'To correct, pull or clamp across the <strong>long</strong> diagonal. That shortens it and lengthens the other one.',
+      t3: 'Weld shrinkage pulls toward the weld. Alternate welds across opposite corners and re-check the diagonals between passes.',
+      t4: 'Use one tape for both readings and pull it with the same tension each time.',
+      footP: 'Portfolio version: generic labels, no company branding. Example tolerance only; always use the drawing.',
+      footM: 'Diagonal model:',
+      diff: function (v) { return 'Quick check: the two diagonals can differ by up to <b>' + v + '</b> and stay in tolerance.'; },
+      done: 'Done', phLock: 'Enter length and width first', phIn: 'e.g. 50 1/8', phMm: 'e.g. 1271.5',
+      uIn: 'in', uMm: 'mm',
+      axTop: 'DEGREES OFF SQUARE', axBot: 'DIAGONAL', cMin: 'MIN', cNom: 'NOMINAL', cMax: 'MAX',
+      offAbove: 'Off scale above', offBelow: 'Off scale below', corner: 'corner',
+      pNone: 'No reading', pCheck: 'Check entry', pOk: 'In tolerance', pBad: 'Out of tolerance',
+      vNone: 'Enter a measured diagonal to see how far the corner is from square.',
+      vImp: function (L, W, u) { return 'That diagonal is not possible for a ' + L + ' x ' + W + ' ' + u + ' frame. Re-measure and check the length and width.'; },
+      vRes: function (m, d, dl, t) { return 'Measured ' + m + ' is ' + d + ' from nominal: ' + dl + '° off square (limit ±' + t + '°).'; },
+      vHold: ' Hold the part and flag it for quality review.',
+      err: 'Enter length and width above zero as a decimal (48.5) or fraction (48 1/2), and a tolerance between 0 and 45 degrees.'
+    },
+    es: {
+      dept: 'Herramienta de inspección de calidad | Versión de portafolio',
+      title: 'Verificación de Escuadra de Piezas Soldadas',
+      lede: 'Ingrese el largo, el ancho y el ángulo permitido de la esquina del marco. La herramienta da la diagonal nominal (de esquina a esquina) y las diagonales mínima y máxima que mantienen cada esquina dentro de la tolerancia de 90&deg;.',
+      why: 'Hecha para soldadores en planta: solo se necesita una cinta métrica, acepta fracciones tal como se escriben y cambia entre inglés y español.',
+      inputs: 'Datos de entrada', units: 'Unidades', inches: 'Pulgadas', mm: 'Milímetros',
+      len: 'Largo (L)', wid: 'Ancho (W)', tol: 'Tolerancia del ángulo (&plusmn;)', deg: 'grados',
+      fmtHint: 'Decimal o fracción: 48.5, 48 1/2 o 48-1/2',
+      tolHint: 'Ejemplo predeterminado &plusmn;0.5&deg;. Use la tolerancia del plano.',
+      meas: 'Diagonal medida', optional: '(opcional)',
+      measHint: 'Mida de esquina a esquina. Revise ambas diagonales e ingrese cada una. La revisión se hace al tocar Listo o al salir del campo.',
+      cross: 'Dimensión diagonal', min: 'Mín', nom: 'Nominal', max: 'Máx', corner90: 'Esquina a 90.00&deg;',
+      scaleH: 'Escala: grados fuera de escuadra vs. diagonal', scaleAria: 'Escala que muestra los grados fuera de escuadra sobre las dimensiones diagonales correspondientes',
+      lgIn: 'Dentro de tolerancia', lgOut: 'Fuera de tolerancia', lgMeas: 'Diagonal medida',
+      how: 'Cómo funciona la medición en diagonal',
+      pH: 'El principio',
+      p1: 'Un rectángulo tiene dos diagonales iguales. Cuando un marco está fuera de escuadra se inclina como un paralelogramo: una diagonal se alarga y la otra se acorta casi la misma cantidad. Comparar las dos diagonales encuentra el error sin escuadra, transportador ni medidor de ángulo.',
+      p2: 'La diagonal más larga va entre las dos esquinas que se abrieron a más de 90&deg;. La más corta va entre las esquinas que se cerraron a menos de 90&deg;.',
+      f1: 'A escuadra: diagonales iguales', f2: 'Inclinado: una larga, una corta', short: 'A corta', long: 'B larga',
+      c1: '<strong>Revise los lados primero.</strong> Diagonales iguales prueban la escuadra solo si los lados opuestos son iguales. Un marco con un lado corto puede tener diagonales iguales y aun así estar fuera de escuadra; confirme ambos largos y ambos anchos antes de confiar en las diagonales.',
+      sH: 'Cómo medir',
+      s1: 'Coloque el marco sobre una mesa o dispositivo plano. Las diagonales no detectan torsión, así que la pieza debe estar plana primero.',
+      s2: 'Revise que los dos largos sean iguales y que los dos anchos sean iguales.',
+      s3: 'Use el mismo punto de referencia en las cuatro esquinas: esquinas exteriores o una marca de punzón a la misma distancia de cada esquina.',
+      s4: 'Enganche la cinta en la esquina 1 y lea en la esquina 3. Esta es la diagonal A.',
+      s5: 'Enganche la cinta en la esquina 2 y lea en la esquina 4. Esta es la diagonal B.',
+      s6: 'Ingrese cada diagonal en el campo Diagonal medida. <strong>Ambas lecturas en la franja verde:</strong> el marco está a escuadra dentro de tolerancia.',
+      s7: '<strong>Cualquier lectura en la zona roja:</strong> detenga la pieza y márquela para revisión de calidad antes de cualquier retrabajo.',
+      tH: 'Consejos de taller',
+      t1: 'Puntee, mida y luego suelde. Corregir un marco punteado requiere una prensa; corregir una pieza terminada requiere calor o un corte.',
+      t2: 'Para corregir, jale o apriete a lo largo de la diagonal <strong>larga</strong>. Eso la acorta y alarga la otra.',
+      t3: 'La contracción de la soldadura jala hacia el cordón. Alterne soldaduras en esquinas opuestas y vuelva a medir las diagonales entre pasadas.',
+      t4: 'Use la misma cinta para ambas lecturas y jálela con la misma tensión cada vez.',
+      footP: 'Versión de portafolio: etiquetas genéricas, sin marca de empresa. Tolerancia de ejemplo; siempre use el plano.',
+      footM: 'Modelo de la diagonal:',
+      diff: function (v) { return 'Revisión rápida: las dos diagonales pueden diferir hasta <b>' + v + '</b> y seguir en tolerancia.'; },
+      done: 'Listo', phLock: 'Primero ingrese largo y ancho', phIn: 'ej. 50 1/8', phMm: 'ej. 1271.5',
+      uIn: 'pulg', uMm: 'mm',
+      axTop: 'GRADOS FUERA DE ESCUADRA', axBot: 'DIAGONAL', cMin: 'MÍN', cNom: 'NOMINAL', cMax: 'MÁX',
+      offAbove: 'Fuera de escala (arriba)', offBelow: 'Fuera de escala (abajo)', corner: 'esquina',
+      pNone: 'Sin lectura', pCheck: 'Revise el dato', pOk: 'En tolerancia', pBad: 'Fuera de tolerancia',
+      vNone: 'Ingrese una diagonal medida para ver qué tan lejos está la esquina de la escuadra.',
+      vImp: function (L, W, u) { return 'Esa diagonal no es posible para un marco de ' + L + ' x ' + W + ' ' + u + '. Vuelva a medir y revise el largo y el ancho.'; },
+      vRes: function (m, d, dl, t) { return 'La medida de ' + m + ' está a ' + d + ' del nominal: ' + dl + '° fuera de escuadra (límite ±' + t + '°).'; },
+      vHold: ' Detenga la pieza y márquela para revisión de calidad.',
+      err: 'Ingrese largo y ancho mayores que cero como decimal (48.5) o fracción (48 1/2), y una tolerancia entre 0 y 45 grados.'
+    }
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var t = function (k) { return STR[lang][k]; };
+  var uL = function () { return unit === 'in' ? t('uIn') : t('uMm'); };
+  function setLang(l) {
+    lang = STR[l] ? l : 'en';
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(function (e) { e.innerHTML = t(e.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (e) { e.setAttribute('aria-label', t(e.getAttribute('data-i18n-aria'))); });
+    document.querySelectorAll('.done').forEach(function (e) { e.textContent = t('done'); });
+    document.querySelectorAll('.ul').forEach(function (e) { e.textContent = uL(); });
+    $('l-en').setAttribute('aria-pressed', lang === 'en');
+    $('l-es').setAttribute('aria-pressed', lang === 'es');
+    try { localStorage.setItem('wsq-lang', lang); } catch (e) {}
+    updateLock(); run();
+  }
+  var C = { ink: '#1a2127', g90: '#3c4852', g60: '#56636d', pass: '#2E8B4A', fail: '#C62828', white: '#FFFFFF', accent: '#1f3864' };
+  var FONT = '"Source Sans 3", Arial, sans-serif';
+  var rad = function (d) { return d * Math.PI / 180; };
+  var deg = function (r) { return r * 180 / Math.PI; };
+  var dp = function () { return unit === 'in' ? 3 : 2; };
+
+  function diag(L, W, d) { return Math.sqrt(L * L + W * W + 2 * L * W * Math.sin(rad(d))); }
+  function delta(L, W, D) {
+    var s = (D * D - L * L - W * W) / (2 * L * W);
+    if (s > 1 || s < -1) return NaN;
+    return deg(Math.asin(s));
+  }
+  function parseVal(str) {
+    var s = String(str).trim().replace(/,/g, '.').replace(/\s*(?:"|”|″|in|pulg\.?)$/i, '').trim();
+    var m;
+    if (/^(?:\d+\.?\d*|\.\d+)$/.test(s)) return parseFloat(s);
+    if ((m = s.match(/^(\d+)\s*\/\s*(\d+)$/))) return +m[2] ? m[1] / m[2] : NaN;
+    if ((m = s.match(/^(\d+)(?:\s+|\s*-\s*)(\d+)\s*\/\s*(\d+)$/))) return +m[3] ? +m[1] + m[2] / m[3] : NaN;
+    return NaN;
+  }
+  function num(id) { return parseVal($(id).value); }
+  function frac(v, mode) {
+    var x = v * 32, k = mode === 'up' ? Math.ceil(x - 1e-9) : mode === 'down' ? Math.floor(x + 1e-9) : Math.round(x);
+    var w = Math.floor(k / 32), r = k - w * 32, d = 32;
+    while (r && r % 2 === 0) { r /= 2; d /= 2; }
+    return (r ? (w ? w + ' ' : '') + r + '/' + d : String(w)) + '"';
+  }
+  function applyMode() {
+    ['len', 'wid', 'meas'].forEach(function (id) {
+      var e = $(id);
+      e.setAttribute('inputmode', unit === 'in' ? 'text' : 'decimal');
+      e.setAttribute('autocomplete', 'off'); e.setAttribute('autocapitalize', 'off'); e.setAttribute('spellcheck', 'false');
+    });
+    $('fmt-hint').hidden = unit !== 'in';
+    updateLock();
+  }
+  function updateLock() {
+    var ok = num('len') > 0 && num('wid') > 0, m = $('meas');
+    m.disabled = !ok;
+    m.placeholder = ok ? (unit === 'in' ? t('phIn') : t('phMm')) : t('phLock');
+  }
+  function fmt(v, n) { return v.toFixed(n); }
+  function sgn(v, n) { var s = v.toFixed(n); if (parseFloat(s) === 0) return (0).toFixed(n); return (v > 0 ? '+' : '') + s; }
+
+  function setUnit(u) {
+    if (u === unit) return;
+    var f = u === 'mm' ? 25.4 : 1 / 25.4;
+    ['len', 'wid', 'meas'].forEach(function (id) {
+      var v = num(id);
+      if (isFinite(v)) $(id).value = +(v * f).toFixed(u === 'mm' ? 2 : 3);
+    });
+    unit = u;
+    $('u-in').setAttribute('aria-pressed', u === 'in');
+    $('u-mm').setAttribute('aria-pressed', u === 'mm');
+    document.querySelectorAll('.ul').forEach(function (e) { e.textContent = uL(); });
+    applyMode();
+    try { localStorage.setItem('wsq-unit', u); } catch (e) {}
+    run();
+  }
+
+  function el(tag, attrs, text) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function draw(L, W, T, M) {
+    var s = $('scale');
+    while (s.firstChild) s.removeChild(s.firstChild);
+    var x0 = 70, x1 = 930, yA = 108, n = dp();
+    var R = T * 1.5;
+    var dLo = diag(L, W, -R), dHi = diag(L, W, R);
+    var X = function (D) { return x0 + (D - dLo) / (dHi - dLo) * (x1 - x0); };
+    var lab = { 'font-family': FONT, 'font-size': 15, 'font-variant-numeric': 'tabular-nums' };
+    var cap = { 'font-family': FONT, 'font-weight': 700, 'font-size': 13, 'letter-spacing': '1.6', fill: C.g60 };
+
+    s.appendChild(el('text', Object.assign({}, cap, { x: x0 - 60, y: 22, fill: C.accent }), t('axTop')));
+    s.appendChild(el('text', Object.assign({}, cap, { x: x0 - 60, y: 252, fill: C.accent }), t('axBot') + ' (' + uL().toUpperCase() + ')'));
+
+    var xm = X(diag(L, W, -T)), xp = X(diag(L, W, T));
+    s.appendChild(el('rect', { x: x0, y: yA - 9, width: xm - x0, height: 18, fill: C.fail }));
+    s.appendChild(el('rect', { x: xp, y: yA - 9, width: x1 - xp, height: 18, fill: C.fail }));
+    s.appendChild(el('rect', { x: xm, y: yA - 9, width: xp - xm, height: 18, fill: C.pass }));
+
+    for (var i = -6; i <= 6; i++) {
+      var d = T * i / 4, x = X(diag(L, W, d)), major = i % 2 === 0;
+      var len = major ? 18 : 11, sw = major ? 1.6 : 1;
+      s.appendChild(el('line', { x1: x, x2: x, y1: yA - 9 - len, y2: yA - 9, stroke: C.g90, 'stroke-width': sw }));
+      s.appendChild(el('line', { x1: x, x2: x, y1: yA + 9, y2: yA + 9 + len, stroke: C.g90, 'stroke-width': sw }));
+      if (major) {
+        var key = (i === 0 || Math.abs(i) === 4);
+        var a = Object.assign({}, lab, { x: x, 'text-anchor': 'middle', 'font-weight': key ? 700 : 400, fill: key ? C.ink : C.g60 });
+        s.appendChild(el('text', Object.assign({}, a, { y: yA - 34 }), sgn(d, 2) + '°'));
+        s.appendChild(el('text', Object.assign({}, a, { y: yA + 46 }), fmt(diag(L, W, d), n)));
+        if (unit === 'in') s.appendChild(el('text', Object.assign({}, a, { y: yA + 67, 'font-size': 14 }), frac(diag(L, W, d), i === -4 ? 'up' : i === 4 ? 'down' : 'near')));
+      }
+    }
+    [[-T, t('cMin')], [0, t('cNom')], [T, t('cMax')]].forEach(function (p) {
+      s.appendChild(el('text', Object.assign({}, cap, { x: X(diag(L, W, p[0])), y: yA + (unit === 'in' ? 90 : 66), 'text-anchor': 'middle' }), p[1]));
+    });
+
+    if (isFinite(M)) {
+      var xm2 = X(M), off = '';
+      if (xm2 < x0) { xm2 = x0; off = 'below'; } else if (xm2 > x1) { xm2 = x1; off = 'above'; }
+      s.appendChild(el('line', { x1: xm2, x2: xm2, y1: yA - 22, y2: yA + 26, stroke: C.ink, 'stroke-width': 4 }));
+      s.appendChild(el('path', { d: 'M' + (xm2 - 9) + ' ' + (yA - 25) + ' L' + (xm2 + 9) + ' ' + (yA - 25) + ' L' + xm2 + ' ' + (yA - 10) + ' Z', fill: C.ink, stroke: C.white, 'stroke-width': 1.5 }));
+      if (off) {
+        s.appendChild(el('text', { x: off === 'below' ? xm2 + 14 : xm2 - 14, y: yA - 54, 'text-anchor': off === 'below' ? 'start' : 'end', 'font-family': FONT, 'font-size': 13, 'font-weight': 700, fill: C.fail }, off === 'above' ? t('offAbove') : t('offBelow')));
+      }
+    }
+  }
+
+  function run() {
+    var L = num('len'), W = num('wid'), T = Math.abs(num('tol')), M = $('meas').disabled ? NaN : num('meas');
+    var err = $('err');
+    if (!(L > 0) || !(W > 0) || !(T > 0) || T >= 45) {
+      err.textContent = t('err');
+      err.hidden = false; return;
+    }
+    err.hidden = true;
+    var n = dp(), inch = unit === 'in';
+    var nom = diag(L, W, 0), lo = diag(L, W, -T), hi = diag(L, W, T);
+    $('o-nom').textContent = fmt(nom, n);
+    $('o-min').textContent = fmt(lo, n);
+    $('o-max').textContent = fmt(hi, n);
+    $('o-nom-f').textContent = inch ? frac(nom, 'near') : '';
+    $('o-min-f').textContent = inch ? frac(lo, 'up') : '';
+    $('o-max-f').textContent = inch ? frac(hi, 'down') : '';
+    $('o-min-s').textContent = '-' + fmt(nom - lo, n) + ' ' + uL() + ' (' + t('corner') + ' ' + fmt(90 - T, 2) + '°)';
+    $('o-max-s').textContent = '+' + fmt(hi - nom, n) + ' ' + uL() + ' (' + t('corner') + ' ' + fmt(90 + T, 2) + '°)';
+    var dd = hi - lo;
+    $('diff').innerHTML = t('diff')(fmt(dd, n) + ' ' + uL() + (inch ? ' (' + frac(dd, 'down') + ')' : ''));
+
+    var v = $('verdict'), pill = $('pill'), vt = $('vtext');
+    v.className = 'verdict';
+    if (!isFinite(M) || $('meas').value.trim() === '') {
+      pill.textContent = t('pNone'); vt.textContent = t('vNone');
+      draw(L, W, T, NaN); return;
+    }
+    var dl = delta(L, W, M);
+    if (!isFinite(dl)) {
+      v.className = 'verdict bad'; pill.textContent = t('pCheck');
+      vt.textContent = t('vImp')(L, W, uL());
+      draw(L, W, T, M); return;
+    }
+    var ok = Math.abs(dl) <= T + 1e-9;
+    v.className = 'verdict ' + (ok ? 'ok' : 'bad');
+    pill.textContent = ok ? t('pOk') : t('pBad');
+    vt.textContent = t('vRes')(fmt(M, n) + ' ' + uL() + (inch ? ' (' + frac(M, 'near') + ')' : ''), sgn(M - nom, n) + ' ' + uL(), sgn(dl, 3), T) + (ok ? '' : t('vHold'));
+    draw(L, W, T, M);
+  }
+
+  function closeKeypad() { var a = document.activeElement; if (a && a.tagName === 'INPUT') a.blur(); }
+  document.querySelectorAll('.field').forEach(function (f) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'done'; b.textContent = 'Done';
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); closeKeypad(); });
+    b.addEventListener('click', closeKeypad);
+    f.appendChild(b);
+  });
+  ['len', 'wid', 'tol', 'meas'].forEach(function (id) {
+    $(id).setAttribute('enterkeyhint', 'done');
+    $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); closeKeypad(); } });
+  });
+  document.addEventListener('pointerdown', function (e) { if (!e.target.closest('.field')) closeKeypad(); });
+  $('l-en').addEventListener('click', function () { setLang('en'); });
+  $('l-es').addEventListener('click', function () { setLang('es'); });
+  $('u-in').addEventListener('click', function () { setUnit('in'); });
+  $('u-mm').addEventListener('click', function () { setUnit('mm'); });
+  ['len', 'wid', 'tol'].forEach(function (id) { $(id).addEventListener('input', run); });
+  ['len', 'wid'].forEach(function (id) { $(id).addEventListener('change', function () { updateLock(); run(); }); });
+  $('meas').addEventListener('change', run);
+  $('f').addEventListener('submit', function (e) { e.preventDefault(); });
+  applyMode();
+  try { if (localStorage.getItem('wsq-unit') === 'mm') setUnit('mm'); } catch (e) {}
+  var startLang = 'en';
+  try { startLang = localStorage.getItem('wsq-lang') || ((navigator.language || '').toLowerCase().indexOf('es') === 0 ? 'es' : 'en'); } catch (e) {}
+  setLang(startLang);
+})();
+</script>
+<script data-goatcounter="https://nwoyak.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body></html>
