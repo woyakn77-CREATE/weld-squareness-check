@@ -8,6 +8,12 @@ A shop-floor tool that tells a welder whether a rectangular frame is square, usi
 
 Our welded frames carry a ±0.5° corner spec, but the welders had no practical way to check it. I realized we were expecting the team to hold a spec without giving them the tools to assess it. Cross-corner (diagonal) measuring can do it with a tape measure, but only if the operator knows what diagonal to expect and how much variation ±0.5° allows. Nobody does that trigonometry at the bench.
 
+## Before and after
+
+![Before and after process flow](weld-squareness-before-after.svg)
+
+A ±0.5° error equals about a 0.079" gap at the end of a 9" square blade, or a 0.35" diagonal difference on a 24" x 36" frame. Without those numbers, the old checks could find a gap but not judge it.
+
 ## Result
 
 This tool was the answer. It is now on every computer in the metal shop.

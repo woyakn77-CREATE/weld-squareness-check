@@ -223,6 +223,12 @@ label{display:grid;gap:4px;font-weight:600;font-size:14px}
       </div>
     </div>
   </section>
+
+  <section class="panel" aria-labelledby="ba-h">
+    <h2 class="eyebrow" id="ba-h" data-i18n="baH">Before and after</h2>
+    <p style="margin:0 0 14px" data-i18n="baP">Before this tool, a gap at the square or a difference between diagonals could be measured but not judged, because nobody knew what &plusmn;0.5&deg; meant in inches. The tool turns the angle spec into a pass or fail number.</p>
+    <img src="weld-squareness-before-after.svg" alt="Flowchart: the old method checks gaps and diagonals with no limit and ends in a subjective call; the tool calculates the corner angle and gives pass or fail against plus or minus 0.5 degrees" style="display:block;width:100%;max-width:380px;height:auto;margin:0 auto">
+  </section>
 </main>
 
 <footer class="foot">
@@ -270,6 +276,8 @@ label{display:grid;gap:4px;font-weight:600;font-size:14px}
       t2: 'To correct, pull or clamp across the <strong>long</strong> diagonal. That shortens it and lengthens the other one.',
       t3: 'Weld shrinkage pulls toward the weld. Alternate welds across opposite corners and re-check the diagonals between passes.',
       t4: 'Use one tape for both readings and pull it with the same tension each time.',
+      baH: 'Before and after',
+      baP: 'Before this tool, a gap at the square or a difference between diagonals could be measured but not judged, because nobody knew what &plusmn;0.5&deg; meant in inches. The tool turns the angle spec into a pass or fail number.',
       footP: 'Portfolio version: generic labels, no company branding. Example tolerance only; always use the drawing.',
       footM: 'Diagonal model:',
       diff: function (v) { return 'Quick check: the two diagonals can differ by up to <b>' + v + '</b> and stay in tolerance.'; },
@@ -317,6 +325,8 @@ label{display:grid;gap:4px;font-weight:600;font-size:14px}
       t2: 'Para corregir, jale o apriete a lo largo de la diagonal <strong>larga</strong>. Eso la acorta y alarga la otra.',
       t3: 'La contracción de la soldadura jala hacia el cordón. Alterne soldaduras en esquinas opuestas y vuelva a medir las diagonales entre pasadas.',
       t4: 'Use la misma cinta para ambas lecturas y jálela con la misma tensión cada vez.',
+      baH: 'Antes y después',
+      baP: 'Antes de esta herramienta, una abertura en la escuadra o una diferencia entre diagonales se podía medir pero no juzgar, porque nadie sabía qué significaba &plusmn;0.5&deg; en pulgadas. La herramienta convierte la especificación de ángulo en un resultado de pasa o no pasa.',
       footP: 'Versión de portafolio: etiquetas genéricas, sin marca de empresa. Tolerancia de ejemplo; siempre use el plano.',
       footM: 'Modelo de la diagonal:',
       diff: function (v) { return 'Revisión rápida: las dos diagonales pueden diferir hasta <b>' + v + '</b> y seguir en tolerancia.'; },
